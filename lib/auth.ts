@@ -1,10 +1,9 @@
-import User from "@/models/User";
-import { NextAuthOptions } from "next-auth";
+
 import CredentialsProvider from "next-auth/providers/credentials";
-import { connectToDatabase } from "./db";
 import bcrypt from "bcryptjs";
-import { signIn } from "next-auth/react";
-import { error } from "console";
+import { connectToDatabase } from "./db";
+import UserModel from "../models/User";
+import { NextAuthOptions } from "next-auth";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -21,10 +20,10 @@ export const authOptions: NextAuthOptions = {
 
         try {
           await connectToDatabase();
-          const user = User.findOne({ email: credentials.email });
+          const user = await UserModel.findOne({ email: credentials.email });
 
           if (!user) {
-            throw new Error("No user found");
+            throw new Error("No user found with this email");
           }
 
           const isValid = await bcrypt.compare(
@@ -33,7 +32,7 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!isValid) {
-            throw new Error("Invalid Password");
+            throw new Error("Invalid password");
           }
 
           return {
@@ -41,6 +40,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
           };
         } catch (error) {
+          console.error("Auth error:", error);
           throw error;
         }
       },
@@ -51,14 +51,12 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
       }
-      return session;
+      return token;
     },
-
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
       }
-
       return session;
     },
   },
