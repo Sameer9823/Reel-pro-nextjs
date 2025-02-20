@@ -32,4 +32,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "failed to create user" }, { status: 500 });
 
   }
-}
+};
